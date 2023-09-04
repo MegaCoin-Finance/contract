@@ -46,8 +46,8 @@ contract MegaJackpot is IMegaJackpot, ReentrancyGuard, Ownable {
 
     mapping(uint256 => Game) public gameInfo;
     mapping(uint256 => mapping(uint256 => Prize)) public prize;
-    mapping(bytes32 => mapping(address => RewardSpin)) public rewardSpin;
-    mapping(bytes32 => mapping(uint256 => uint256)) public numberRewardSpin;
+    mapping(uint256 => RewardSpin) public orders;
+    mapping(uint256 => mapping(uint256 => uint256)) public orderDetail;
 
     function name() public view returns (string memory) {
         return _name;
@@ -96,15 +96,15 @@ contract MegaJackpot is IMegaJackpot, ReentrancyGuard, Ownable {
         prize[indexGame][11].value = newPrice - currentPrice;
     }
 
-    function playGame(
+    function order(
         uint256 devPercent,
         uint256 sytemFee,
         address sponsorAddress,
         address devWallet,
         address mktWallet,
         uint256 idGame,
-        uint256 qty,
-        uint256 tokenId
+        uint256 tokenId,
+        uint256 qty
     ) public override nonReentrant {
         require(gameInfo[idGame].price > 0, "Game not found");
         uint256 amount = gameInfo[idGame].price * qty;
@@ -125,23 +125,23 @@ contract MegaJackpot is IMegaJackpot, ReentrancyGuard, Ownable {
         uint256 totalReward = 0;
         uint256 jackpotPrice = 0;
         uint256 _idGame = idGame;
-        bytes32 hash = keccak256(abi.encodePacked(block.number, _msgSender()));
+        uint256 _tokenId = tokenId;
         for (uint256 i = 0; i < qty; i++) {
-            (uint256 _totalReward, bool jackpot) = spin(i, hash, _idGame);
+            (uint256 _totalReward, bool jackpot) = spin(i, _tokenId, _idGame);
             totalReward += _totalReward;
             if (jackpot) {
                 jackpotPrice = _totalReward;
                 for (uint256 n = i; n >= 0; n--) {
-                    delete numberRewardSpin[hash][n];
+                    delete orderDetail[_tokenId][n];
                 }
-                numberRewardSpin[hash][0] = jackpotPrice;
+                orderDetail[_tokenId][0] = jackpotPrice;
                 break;
             }
         }
 
-        rewardSpin[hash][_msgSender()].jackpot = jackpotPrice > 0;
-        rewardSpin[hash][_msgSender()].qty = qty;
-        rewardSpin[hash][_msgSender()].tokenId = tokenId;
+        orders[_tokenId].jackpot = jackpotPrice > 0;
+        orders[_tokenId].qty = qty;
+        orders[_tokenId].tokenId = _tokenId;
 
         // has jackpot
         if (jackpotPrice > 0) {
@@ -165,12 +165,12 @@ contract MegaJackpot is IMegaJackpot, ReentrancyGuard, Ownable {
         }
     }
 
-    function spin(uint256 number, bytes32 hash, uint256 idGame) internal returns (uint256 reward, bool jackpot) {
+    function spin(uint256 number, uint256 _tokenId, uint256 idGame) internal returns (uint256 reward, bool jackpot) {
         uint256 rSpin = random(block.number % 12);
         jackpot = false;
         for (uint256 n = 0; n < 12; n++) {
             if (prize[idGame][n].percent > 0 && rSpin <= prize[idGame][n].percent) {
-                numberRewardSpin[hash][number] = prize[idGame][n].value;
+                orderDetail[_tokenId][number] = prize[idGame][n].value;
                 reward = prize[idGame][n].value;
                 if (n == 11) {
                     jackpot = true;

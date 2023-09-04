@@ -16,8 +16,8 @@ contract MegaFactoryV1 is CloneFactory, ReentrancyGuard, Ownable {
     using Address for address;
     using SafeMath for uint256;
 
-    event DeployedGame(address gameClone);
-    event PlayGame(address contractGame, uint256 idGame, uint256 tokenId, uint256 qty);
+    event DeployedGame(address gameClone, address _owner);
+    event Order(address contractGame, uint256 idGame, uint256 tokenId, uint256 qty);
 
     string private _name = "Mega Factory V1";
     MegaItemsCore public MegaItemsNFT;
@@ -38,6 +38,7 @@ contract MegaFactoryV1 is CloneFactory, ReentrancyGuard, Ownable {
     function deployedGame(address game, address token) public payable {
         require(listGame[game] == true, "Game not found");
         require(msg.value >= deployedFee, "The price to send is not correct");
+        require(address(MegaItemsNFT) != address(0), "contract NFT not found");
         uint256 affFee = deployedFee.mul(affPercent).div(PERCENTS_DIVIDER);
         uint256 devFee = deployedFee.mul(devPercent).div(PERCENTS_DIVIDER);
         uint256 mktFee = deployedFee.sub(affFee).sub(devFee);
@@ -47,26 +48,26 @@ contract MegaFactoryV1 is CloneFactory, ReentrancyGuard, Ownable {
         address gameClone = createClone(game);
         IMegaJackpot(gameClone).setToken(token);
         IMegaJackpot(gameClone).setOwner(_msgSender());
-        emit DeployedGame(gameClone);
+        emit DeployedGame(gameClone, _msgSender());
     }
 
-    function playGame(address contractGame, uint256 idGame, uint256 qty, address sponsorAddress) public nonReentrant {
+    function order(address contractGame, uint256 idGame, uint256 qty, address sponsorAddress) public nonReentrant {
         if (sponsorAddress == address(0)) {
             sponsorAddress = topAddress;
         }
         uint256 tokenId = MegaItemsNFT.getNextNFTId();
         MegaItemsNFT.safeMintNFT(_msgSender(), tokenId, qty);
-        IMegaJackpot(contractGame).playGame(
+        IMegaJackpot(contractGame).order(
             devPercent,
             sytemFee,
             sponsorAddress,
             devWallet,
             mktWallet,
             idGame,
-            qty,
-            tokenId
+            tokenId,
+            qty
         );
-        emit PlayGame(contractGame, idGame, tokenId, qty);
+        emit Order(contractGame, idGame, tokenId, qty);
     }
     function setListGame(address game, bool active) public onlyOwner {
         listGame[game] = active;
