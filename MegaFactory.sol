@@ -35,6 +35,14 @@ contract MegaFactoryV1 is CloneFactory, ReentrancyGuard, Ownable {
         return _name;
     }
 
+    constructor(
+        address contractNFT,
+        address game
+    ) {
+        MegaItemsNFT = MegaItemsCore(contractNFT);
+        listGame[game] = true;
+    }
+
     function deployedGame(address game, address token) public payable {
         require(listGame[game] == true, "Game not found");
         require(msg.value >= deployedFee, "The price to send is not correct");
@@ -47,7 +55,7 @@ contract MegaFactoryV1 is CloneFactory, ReentrancyGuard, Ownable {
         mktWallet.transfer(mktFee);
         address gameClone = createClone(game);
         IMegaJackpot(gameClone).setToken(token);
-        IMegaJackpot(gameClone).setOwner(_msgSender());
+        IMegaJackpot(gameClone).setProjectOwnerWallet(_msgSender());
         emit DeployedGame(gameClone, _msgSender());
     }
 

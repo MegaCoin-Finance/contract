@@ -14,7 +14,19 @@ contract MegaJackpot is IMegaJackpot, ReentrancyGuard, Ownable {
     using Address for address;
     using SafeMath for uint256;
 
-    event PlayGame(address contractGame, uint256 idGame, uint256 qty);
+    event Order(uint256 totalReward, uint256 qty, bool jackpot, uint256 devFee, uint256 mktFee, uint256 affFee, uint256 ownerFee);
+    event CreateGame(
+        string _title,
+        uint256 _price,
+        uint256 _startPrice,
+        uint256 _affiliatePercent,
+        uint256 _ownerPercent,
+        uint256 jackpotPercent,
+        uint256[] values,
+        uint256[] percents,
+        uint256 idGame,
+        string nameContract
+    );
 
     string private _name = "Mega Jackpot V1";
     uint256 constant public PERCENTS_DIVIDER = 1000;
@@ -22,7 +34,7 @@ contract MegaJackpot is IMegaJackpot, ReentrancyGuard, Ownable {
     IERC20 public token;
     uint256 public indexGame = 0;
     uint256 public nonce = 0;
-    address public ownerWallet;
+    address public projectOwnerWallet;
 
     struct Prize {
         uint256 value;
@@ -58,9 +70,9 @@ contract MegaJackpot is IMegaJackpot, ReentrancyGuard, Ownable {
         token = IERC20(_token);
     }
 
-    function setOwner(address _owner) public override {
-        require(ownerWallet == address(0), "not set ownerWallet");
-        ownerWallet = _owner;
+    function setProjectOwnerWallet(address _owner) public override {
+        require(projectOwnerWallet == address(0), "not set ownerWallet");
+        projectOwnerWallet = _owner;
     }
 
     function createGame(
@@ -75,8 +87,8 @@ contract MegaJackpot is IMegaJackpot, ReentrancyGuard, Ownable {
     ) public {
         require(_price > 0, "price is zero");
         require(_startPrice > 0, "price is zero");
-        require(_affiliatePercent < 10, "affiliate percent < 10%");
-        require(_ownerPercent < 10, "owner percent < 10%");
+        require((_affiliatePercent * PERCENTS_DIVIDER) <= 10, "affiliate percent < 10%");
+        require((_ownerPercent * PERCENTS_DIVIDER) <= 10, "owner percent < 10%");
         require(values.length == 11 && percents.length == 11, "value and percent is not valid");
         indexGame += 1;
         gameInfo[indexGame].price = _price;
@@ -84,16 +96,32 @@ contract MegaJackpot is IMegaJackpot, ReentrancyGuard, Ownable {
         gameInfo[indexGame].title = _title;
         gameInfo[indexGame].ownerPercent = _ownerPercent;
         gameInfo[indexGame].affiliatePercent = _affiliatePercent;
+        uint256 totalPercentPrize = 0;
         for (uint256 index = 0; index < 11; index++) {
             prize[indexGame][index].value = values[index];
             prize[indexGame][index].percent = percents[index];
+            totalPercentPrize += percents[index];
         }
         uint256 currentPrice = token.balanceOf(address(this));
         require(token.balanceOf(_msgSender()) >= _startPrice, "Insufficient funds in the account");
         token.transferFrom(_msgSender(), address(this), _startPrice);
         uint256 newPrice = token.balanceOf(address(this));
+        totalPercentPrize += jackpotPercent;
+        require(totalPercentPrize ==  SPIN_PERCENTS_DIVIDER, "total percent prize is not valid");
         prize[indexGame][11].percent = jackpotPercent;
         prize[indexGame][11].value = newPrice - currentPrice;
+        emit CreateGame(
+            _title,
+            _price,
+            _startPrice,
+            _affiliatePercent,
+            _ownerPercent,
+            jackpotPercent,
+            values,
+            percents,
+            indexGame,
+            "Mega_Jackpot_V1"
+        );
     }
 
     function order(
@@ -120,7 +148,7 @@ contract MegaJackpot is IMegaJackpot, ReentrancyGuard, Ownable {
         uint256 affFee = amount * (gameInfo[idGame].affiliatePercent / PERCENTS_DIVIDER);
         token.transfer(sponsorAddress, affFee);
         uint256 ownerFee = amount * (gameInfo[idGame].ownerPercent / PERCENTS_DIVIDER);
-        token.transfer(ownerWallet, ownerFee);
+        token.transfer(projectOwnerWallet, ownerFee);
         gameInfo[idGame].totalSpin += qty;
         uint256 totalReward = 0;
         uint256 jackpotPrice = 0;
@@ -163,6 +191,7 @@ contract MegaJackpot is IMegaJackpot, ReentrancyGuard, Ownable {
             gameInfo[_idGame].totalReward += totalReward;
             prize[_idGame][11].value = (prize[_idGame][11].value + afterFee) - totalReward - devFee - mktFee - affFee - ownerFee;
         }
+        emit Order(totalReward, qty, orders[_tokenId].jackpot, devFee, mktFee, affFee, ownerFee);
     }
 
     function spin(uint256 number, uint256 _tokenId, uint256 idGame) internal returns (uint256 reward, bool jackpot) {

@@ -15,5 +15,5 @@ interface IMegaJackpot {
     ) external;
 
     function setToken(address Token) external;
-    function setOwner(address _owner) external;
+    function setProjectOwnerWallet(address _owner) external;
 }
