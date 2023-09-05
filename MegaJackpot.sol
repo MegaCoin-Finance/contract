@@ -87,8 +87,8 @@ contract MegaJackpot is IMegaJackpot, ReentrancyGuard, Ownable {
     ) public {
         require(_price > 0, "price is zero");
         require(_startPrice > 0, "price is zero");
-        require((_affiliatePercent * PERCENTS_DIVIDER) <= 10, "affiliate percent < 10%");
-        require((_ownerPercent * PERCENTS_DIVIDER) <= 10, "owner percent < 10%");
+        require((_affiliatePercent) <= 100, "affiliate percent < 10%");
+        require((_ownerPercent) <= 100, "owner percent < 10%");
         require(values.length == 11 && percents.length == 11, "value and percent is not valid");
         indexGame += 1;
         gameInfo[indexGame].price = _price;
