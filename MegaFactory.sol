@@ -16,7 +16,7 @@ contract MegaFactoryV1 is CloneFactory, ReentrancyGuard, Ownable {
     using Address for address;
     using SafeMath for uint256;
 
-    event DeployedGame(address gameClone, address _owner);
+    event DeployedGame(address gameClone, address projectOwner, address contractGame, address contractToken);
     event Order(address contractGame, uint256 idGame, uint256 tokenId, uint256 qty);
 
     string private _name = "Mega Factory V1";
@@ -56,7 +56,7 @@ contract MegaFactoryV1 is CloneFactory, ReentrancyGuard, Ownable {
         address gameClone = createClone(game);
         IMegaJackpot(gameClone).setToken(token);
         IMegaJackpot(gameClone).setProjectOwnerWallet(_msgSender());
-        emit DeployedGame(gameClone, _msgSender());
+        emit DeployedGame(gameClone, _msgSender(), game, token);
     }
 
     function order(address contractGame, uint256 idGame, uint256 qty, address sponsorAddress) public nonReentrant {
@@ -73,37 +73,48 @@ contract MegaFactoryV1 is CloneFactory, ReentrancyGuard, Ownable {
             mktWallet,
             idGame,
             tokenId,
-            qty
+            qty,
+            _msgSender()
         );
         emit Order(contractGame, idGame, tokenId, qty);
     }
+
     function setListGame(address game, bool active) public onlyOwner {
         listGame[game] = active;
     }
+
     function setNFTContract(address nft) public onlyOwner {
         MegaItemsNFT = MegaItemsCore(nft);
     }
+
     function setDeployFee(uint256 fee) public onlyOwner {
         deployedFee = fee;
     }
+
     function setAffPercent(uint256 fee) public onlyOwner {
         affPercent = fee;
     }
+
     function setDevPercent(uint256 fee) public onlyOwner {
         devPercent = fee;
     }
+
     function setSytemFeePercent(uint256 fee) public onlyOwner {
         sytemFee = fee;
     }
+
     function setDevWallet(address _wallet) public onlyOwner {
         devWallet = payable(_wallet);
     }
+
     function setMktWallet(address _wallet) public onlyOwner {
         mktWallet = payable(_wallet);
     }
+
     function setTopAddress(address _wallet) public onlyOwner {
         topAddress = payable(_wallet);
     }
+
     function SwapExactToken(
         address coinAddress,
         uint256 value,
@@ -114,5 +125,6 @@ contract MegaFactoryV1 is CloneFactory, ReentrancyGuard, Ownable {
         }
         IERC20(coinAddress).transfer(to, value);
     }
+
     receive() external payable {}
 }

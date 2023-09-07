@@ -14,20 +14,6 @@ contract MegaJackpot is IMegaJackpot, ReentrancyGuard, Ownable {
     using Address for address;
     using SafeMath for uint256;
 
-    event Order(uint256 totalReward, uint256 qty, bool jackpot, uint256 devFee, uint256 mktFee, uint256 affFee, uint256 ownerFee);
-    event CreateGame(
-        string _title,
-        uint256 _price,
-        uint256 _startPrice,
-        uint256 _affiliatePercent,
-        uint256 _ownerPercent,
-        uint256 jackpotPercent,
-        uint256[] values,
-        uint256[] percents,
-        uint256 idGame,
-        string nameContract
-    );
-
     string private _name = "Mega Jackpot V1";
     uint256 constant public PERCENTS_DIVIDER = 1000;
     uint256 constant public SPIN_PERCENTS_DIVIDER = 1000_000_000;
@@ -85,6 +71,7 @@ contract MegaJackpot is IMegaJackpot, ReentrancyGuard, Ownable {
         uint256[] memory values,
         uint256[] memory percents
     ) public {
+        require(_msgSender() == projectOwnerWallet, "not project owner create game");
         require(_price > 0, "price is zero");
         require(_startPrice > 0, "price is zero");
         require((_affiliatePercent) <= 100, "affiliate percent < 10%");
@@ -103,8 +90,8 @@ contract MegaJackpot is IMegaJackpot, ReentrancyGuard, Ownable {
             totalPercentPrize += percents[index];
         }
         uint256 currentPrice = token.balanceOf(address(this));
-        require(token.balanceOf(_msgSender()) >= _startPrice, "Insufficient funds in the account");
-        token.transferFrom(_msgSender(), address(this), _startPrice);
+        require(token.balanceOf(projectOwnerWallet) >= _startPrice, "Insufficient funds in the account");
+        token.transferFrom(projectOwnerWallet, address(this), _startPrice);
         uint256 newPrice = token.balanceOf(address(this));
         totalPercentPrize += jackpotPercent;
         require(totalPercentPrize ==  SPIN_PERCENTS_DIVIDER, "total percent prize is not valid");
@@ -132,13 +119,14 @@ contract MegaJackpot is IMegaJackpot, ReentrancyGuard, Ownable {
         address mktWallet,
         uint256 idGame,
         uint256 tokenId,
-        uint256 qty
+        uint256 qty,
+        address userSpin
     ) public override nonReentrant {
         require(gameInfo[idGame].price > 0, "Game not found");
         uint256 amount = gameInfo[idGame].price * qty;
         uint256 currentPrice = token.balanceOf(address(this));
-        require(token.balanceOf(_msgSender()) >= amount, "Insufficient funds in the account");
-        token.transferFrom(_msgSender(), address(this), amount);
+        require(token.balanceOf(userSpin) >= amount, "Insufficient funds in the account");
+        token.transferFrom(userSpin, address(this), amount);
         uint256 newPrice = token.balanceOf(address(this));
         uint256 afterFee = newPrice - currentPrice;
         uint256 devFee = amount * (sytemFee / PERCENTS_DIVIDER) * (sytemFee / devPercent);
@@ -181,15 +169,14 @@ contract MegaJackpot is IMegaJackpot, ReentrancyGuard, Ownable {
                 prize[_idGame][11].value = (taxJackpot + afterFee) - devFee - mktFee - affFee - ownerFee;
             }
             totalReward = jackpotPrice - taxJackpot;
-            token.transfer(_msgSender(), totalReward);
             gameInfo[_idGame].term += 1;
             gameInfo[_idGame].totalReward += totalReward;
         } else {
-            if (totalReward > 0) {
-                token.transfer(_msgSender(), totalReward);
-            }
             gameInfo[_idGame].totalReward += totalReward;
             prize[_idGame][11].value = (prize[_idGame][11].value + afterFee) - totalReward - devFee - mktFee - affFee - ownerFee;
+        }
+        if (totalReward > 0) {
+            token.transfer(userSpin, totalReward);
         }
         emit Order(totalReward, qty, orders[_tokenId].jackpot, devFee, mktFee, affFee, ownerFee);
     }
