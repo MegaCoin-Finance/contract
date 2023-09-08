@@ -16,7 +16,16 @@ contract MegaFactoryV1 is CloneFactory, ReentrancyGuard, Ownable {
     using Address for address;
     using SafeMath for uint256;
 
-    event DeployedGame(address gameClone, address projectOwner, address contractGame, address contractToken);
+    event DeployedGame(
+        address contractGameNew,
+        address projectOwner,
+        address contractGameOrigin,
+        address contractToken,
+        uint256 deployedFee,
+        uint256 affFee,
+        uint256 devFee,
+        uint256 mktFee
+    );
     event Order(address contractGame, uint256 idGame, uint256 tokenId, uint256 qty);
 
     string private _name = "Mega Factory V1";
@@ -56,10 +65,11 @@ contract MegaFactoryV1 is CloneFactory, ReentrancyGuard, Ownable {
         address gameClone = createClone(game);
         IMegaJackpot(gameClone).setToken(token);
         IMegaJackpot(gameClone).setProjectOwnerWallet(_msgSender());
-        emit DeployedGame(gameClone, _msgSender(), game, token);
+        emit DeployedGame(gameClone, _msgSender(), game, token, deployedFee, affFee, devFee, mktFee);
     }
 
     function order(address contractGame, uint256 idGame, uint256 qty, address sponsorAddress) public nonReentrant {
+        require(listGame[contractGame] == true, "Game not found");
         if (sponsorAddress == address(0)) {
             sponsorAddress = topAddress;
         }
