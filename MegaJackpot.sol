@@ -122,6 +122,7 @@ contract MegaJackpot is IMegaJackpot, ReentrancyGuard, Ownable {
         uint256 qty,
         address userSpin
     ) public override nonReentrant {
+        require(qty <= 10, "Require qty <= 10");
         require(gameInfo[idGame].price > 0, "Game not found");
         uint256 amount = gameInfo[idGame].price * qty;
         uint256 currentPrice = token.balanceOf(address(this));
