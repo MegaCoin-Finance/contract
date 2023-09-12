@@ -86,7 +86,7 @@ contract MegaJackpot is IMegaJackpot, ReentrancyGuard, Ownable {
         uint256 totalPercentPrize = 0;
         for (uint256 index = 0; index < 11; index++) {
             prize[indexGame][index].value = values[index];
-            prize[indexGame][index].percent = percents[index];
+            prize[indexGame][index].percent = totalPercentPrize + percents[index];
             totalPercentPrize += percents[index];
         }
         uint256 currentPrice = token.balanceOf(address(this));
