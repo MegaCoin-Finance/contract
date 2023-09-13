@@ -54,8 +54,8 @@ contract MegaFactoryV1 is CloneFactory, ReentrancyGuard, Ownable {
 
     function deployedGame(address game, address token) public payable {
         require(listGame[game] == true, "Game not found");
-        require(msg.value >= deployedFee, "The price to send is not correct");
-        require(address(MegaItemsNFT) != address(0), "contract NFT not found");
+        require(msg.value >= deployedFee, "Invalid amount");
+        require(address(MegaItemsNFT) != address(0), "Contract NFT not found");
         uint256 affFee = deployedFee.mul(affPercent).div(PERCENTS_DIVIDER);
         uint256 devFee = deployedFee.mul(devPercent).div(PERCENTS_DIVIDER);
         uint256 mktFee = deployedFee.sub(affFee).sub(devFee);

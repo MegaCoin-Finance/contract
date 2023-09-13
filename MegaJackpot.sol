@@ -52,12 +52,12 @@ contract MegaJackpot is IMegaJackpot, ReentrancyGuard, Ownable {
     }
 
     function setToken(address _token) public override {
-        require(address(token) == address(0), "not set token");
+        require(address(token) == address(0), "Not set token");
         token = IERC20(_token);
     }
 
     function setProjectOwnerWallet(address _owner) public override {
-        require(projectOwnerWallet == address(0), "not set ownerWallet");
+        require(projectOwnerWallet == address(0), "Not set ownerWallet");
         projectOwnerWallet = _owner;
     }
 
@@ -71,12 +71,12 @@ contract MegaJackpot is IMegaJackpot, ReentrancyGuard, Ownable {
         uint256[] memory values,
         uint256[] memory percents
     ) public {
-        require(_msgSender() == projectOwnerWallet, "not project owner create game");
-        require(_price > 0, "price is zero");
-        require(_startPrice > 0, "price is zero");
-        require((_affiliatePercent) <= 100, "affiliate percent < 10%");
-        require((_ownerPercent) <= 100, "owner percent < 10%");
-        require(values.length == 11 && percents.length == 11, "value and percent is not valid");
+        require(_msgSender() == projectOwnerWallet, "Project owner required");
+        require(_price > 0, "Price must > 0");
+        require(_startPrice > 0, "Start price must > 0");
+        require((_affiliatePercent) <= 100, "Affiliate percent must < 10%");
+        require((_ownerPercent) <= 100, "Owner percent must < 10%");
+        require(values.length == 11 && percents.length == 11, "Value or percent is not valid");
         indexGame += 1;
         gameInfo[indexGame].price = _price;
         gameInfo[indexGame].startPrize = _startPrice;
@@ -90,11 +90,11 @@ contract MegaJackpot is IMegaJackpot, ReentrancyGuard, Ownable {
             totalPercentPrize += percents[index];
         }
         uint256 currentPrice = token.balanceOf(address(this));
-        require(token.balanceOf(projectOwnerWallet) >= _startPrice, "Insufficient funds in the account");
+        require(token.balanceOf(projectOwnerWallet) >= _startPrice, "Insufficient funds");
         token.transferFrom(projectOwnerWallet, address(this), _startPrice);
         uint256 newPrice = token.balanceOf(address(this));
         totalPercentPrize += jackpotPercent;
-        require(totalPercentPrize ==  SPIN_PERCENTS_DIVIDER, "total percent prize is not valid");
+        require(totalPercentPrize ==  SPIN_PERCENTS_DIVIDER, "Total percent prize must = 100%");
         prize[indexGame][11].percent = jackpotPercent;
         prize[indexGame][11].value = newPrice - currentPrice;
         emit CreateGame(
@@ -122,11 +122,11 @@ contract MegaJackpot is IMegaJackpot, ReentrancyGuard, Ownable {
         uint256 qty,
         address userSpin
     ) public override nonReentrant {
-        require(qty <= 10, "Require qty <= 10");
+        require(qty <= 10, "Quantity must <= 10");
         require(gameInfo[idGame].price > 0, "Game not found");
         uint256 amount = gameInfo[idGame].price * qty;
         uint256 currentPrice = token.balanceOf(address(this));
-        require(token.balanceOf(userSpin) >= amount, "Insufficient funds in the account");
+        require(token.balanceOf(userSpin) >= amount, "Insufficient funds");
         token.transferFrom(userSpin, address(this), amount);
         uint256 newPrice = token.balanceOf(address(this));
         uint256 afterFee = newPrice - currentPrice;
