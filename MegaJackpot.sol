@@ -95,7 +95,7 @@ contract MegaJackpot is IMegaJackpot, ReentrancyGuard, Ownable {
         uint256 newPrice = token.balanceOf(address(this));
         totalPercentPrize += jackpotPercent;
         require(totalPercentPrize ==  SPIN_PERCENTS_DIVIDER, "total percent prize is not valid");
-        prize[indexGame][11].percent = jackpotPercent;
+        prize[indexGame][11].percent = totalPercentPrize;
         prize[indexGame][11].value = newPrice - currentPrice;
         emit CreateGame(
             _title,
