@@ -148,7 +148,7 @@ contract MegaJackpot is IMegaJackpot, ReentrancyGuard, Ownable {
             totalReward += _totalReward;
             if (jackpot) {
                 jackpotPrice = _totalReward;
-                for (uint256 n = i; n >= 0; n--) {
+                for (uint256 n = i; n > 0; n--) {
                     delete orderDetail[_tokenId][n];
                 }
                 orderDetail[_tokenId][0] = jackpotPrice;
