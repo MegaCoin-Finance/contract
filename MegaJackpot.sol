@@ -45,7 +45,7 @@ contract MegaJackpot is IMegaJackpot, ReentrancyGuard, Ownable {
     mapping(uint256 => Game) public gameInfo;
     mapping(uint256 => mapping(uint256 => Prize)) public prize;
     mapping(uint256 => RewardSpin) public orders;
-    mapping(uint256 => mapping(uint256 => uint256)) public orderDetail;
+    mapping(uint256 => mapping(uint256 => uint256)) public orderRewards;
 
     function name() public view returns (string memory) {
         return _name;
@@ -84,19 +84,22 @@ contract MegaJackpot is IMegaJackpot, ReentrancyGuard, Ownable {
         gameInfo[indexGame].ownerPercent = _ownerPercent;
         gameInfo[indexGame].affiliatePercent = _affiliatePercent;
         uint256 totalPercentPrize = 0;
-        for (uint256 index = 0; index < 11; index++) {
-            prize[indexGame][index].value = values[index];
-            prize[indexGame][index].percent = totalPercentPrize + percents[index];
-            totalPercentPrize += percents[index];
-        }
         uint256 currentPrice = token.balanceOf(address(this));
         require(token.balanceOf(projectOwnerWallet) >= _startPrice, "Insufficient funds");
         token.transferFrom(projectOwnerWallet, address(this), _startPrice);
         uint256 newPrice = token.balanceOf(address(this));
-        totalPercentPrize += jackpotPercent;
+        for (uint256 index = 0; index < 12; index++) {
+            if(index == 0) {
+                prize[indexGame][index].percent = jackpotPercent;
+                prize[indexGame][index].value = newPrice - currentPrice;
+                totalPercentPrize += jackpotPercent;
+            } else {
+                prize[indexGame][index].value = values[index - 1];
+                prize[indexGame][index].percent = totalPercentPrize + percents[index - 1];
+                totalPercentPrize += percents[index - 1];
+            }
+        }
         require(totalPercentPrize ==  SPIN_PERCENTS_DIVIDER, "Total percent prize must = 100%");
-        prize[indexGame][11].percent = jackpotPercent;
-        prize[indexGame][11].value = newPrice - currentPrice;
         emit CreateGame(
             _title,
             _price,
@@ -149,9 +152,9 @@ contract MegaJackpot is IMegaJackpot, ReentrancyGuard, Ownable {
             if (jackpot) {
                 jackpotPrice = _totalReward;
                 for (uint256 n = i; n > 0; n--) {
-                    delete orderDetail[_tokenId][n];
+                    delete orderRewards[_tokenId][n];
                 }
-                orderDetail[_tokenId][0] = jackpotPrice;
+                orderRewards[_tokenId][0] = jackpotPrice;
                 break;
             }
         }
@@ -165,21 +168,21 @@ contract MegaJackpot is IMegaJackpot, ReentrancyGuard, Ownable {
             uint256 taxJackpot = (jackpotPrice * 10) / 100;
             uint256 startPrize = gameInfo[_idGame].startPrize;
             if (startPrize <= taxJackpot) {
-                prize[_idGame][11].value = (startPrize + afterFee) - devFee - mktFee - affFee - ownerFee;
+                prize[_idGame][0].value = (startPrize + afterFee) - devFee - mktFee - affFee - ownerFee;
             } else {
-                prize[_idGame][11].value = (taxJackpot + afterFee) - devFee - mktFee - affFee - ownerFee;
+                prize[_idGame][0].value = (taxJackpot + afterFee) - devFee - mktFee - affFee - ownerFee;
             }
             totalReward = jackpotPrice - taxJackpot;
             gameInfo[_idGame].term += 1;
             gameInfo[_idGame].totalReward += totalReward;
         } else {
             gameInfo[_idGame].totalReward += totalReward;
-            prize[_idGame][11].value = (prize[_idGame][11].value + afterFee) - totalReward - devFee - mktFee - affFee - ownerFee;
+            prize[_idGame][0].value = (prize[_idGame][0].value + afterFee) - totalReward - devFee - mktFee - affFee - ownerFee;
         }
         if (totalReward > 0) {
             token.transfer(userSpin, totalReward);
         }
-        emit Order(totalReward, qty, orders[_tokenId].jackpot, devFee, mktFee, affFee, ownerFee);
+        emit Order(_idGame, totalReward, orders[_tokenId].jackpot, devFee, mktFee, affFee, ownerFee);
     }
 
     function spin(uint256 number, uint256 _tokenId, uint256 idGame) internal returns (uint256 reward, bool jackpot) {
@@ -187,9 +190,9 @@ contract MegaJackpot is IMegaJackpot, ReentrancyGuard, Ownable {
         jackpot = false;
         for (uint256 n = 0; n < 12; n++) {
             if (prize[idGame][n].percent > 0 && rSpin <= prize[idGame][n].percent) {
-                orderDetail[_tokenId][number] = prize[idGame][n].value;
+                orderRewards[_tokenId][number] = prize[idGame][n].value;
                 reward = prize[idGame][n].value;
-                if (n == 11) {
+                if (n == 0) {
                     jackpot = true;
                 }
                 break;
