@@ -69,7 +69,6 @@ contract MegaFactoryV1 is CloneFactory, ReentrancyGuard, Ownable {
     }
 
     function order(address contractGame, uint256 idGame, uint256 qty, address sponsorAddress) public nonReentrant {
-        require(listGame[contractGame] == true, "Game not found");
         if (sponsorAddress == address(0)) {
             sponsorAddress = topAddress;
         }
