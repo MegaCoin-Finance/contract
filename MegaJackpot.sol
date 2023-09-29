@@ -110,7 +110,8 @@ contract MegaJackpot is IMegaJackpot, ReentrancyGuard, Ownable {
             values,
             percents,
             indexGame,
-            "Mega_Jackpot_V1"
+            "Mega_Jackpot_V1",
+            address(this)
         );
     }
 

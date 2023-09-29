@@ -22,7 +22,8 @@ interface IMegaJackpot {
         uint256[] values,
         uint256[] percents,
         uint256 idGame,
-        string nameContract
+        string nameContract,
+        address newGameContract
     );
     function order(
         uint256 devPercent,
