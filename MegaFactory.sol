@@ -39,6 +39,7 @@ contract MegaFactoryV1 is CloneFactory, ReentrancyGuard, Ownable {
     uint256 public devPercent = 200;
     uint256 public sytemFee = 10;
     mapping(address => bool) public listGame;
+    mapping (address => mapping (address => bool)) public validate;
 
     function name() public view returns (string memory) {
         return _name;
@@ -56,6 +57,7 @@ contract MegaFactoryV1 is CloneFactory, ReentrancyGuard, Ownable {
         require(listGame[game] == true, "Game not found");
         require(msg.value >= deployedFee, "Invalid amount");
         require(address(MegaItemsNFT) != address(0), "Contract NFT not found");
+        require(validate[_msgSender()][token] == false, "This contract token created by this user");
         uint256 affFee = deployedFee.mul(affPercent).div(PERCENTS_DIVIDER);
         uint256 devFee = deployedFee.mul(devPercent).div(PERCENTS_DIVIDER);
         uint256 mktFee = deployedFee.sub(affFee).sub(devFee);
@@ -65,6 +67,7 @@ contract MegaFactoryV1 is CloneFactory, ReentrancyGuard, Ownable {
         address gameClone = createClone(game);
         IMegaJackpot(gameClone).setToken(token);
         IMegaJackpot(gameClone).setProjectOwnerWallet(_msgSender());
+        validate[_msgSender()][token] = true;
         emit DeployedGame(gameClone, _msgSender(), game, token, deployedFee, affFee, devFee, mktFee);
     }
 
