@@ -17,6 +17,7 @@ contract MegaFactoryV1 is CloneFactory, ReentrancyGuard, Ownable {
     using SafeMath for uint256;
 
     event DeployedGame(
+        string projectId,
         address contractGameNew,
         address projectOwner,
         address contractGameOrigin,
@@ -40,6 +41,8 @@ contract MegaFactoryV1 is CloneFactory, ReentrancyGuard, Ownable {
     uint256 public sytemFee = 10;
     mapping(address => bool) public listGame;
     mapping (address => mapping (address => bool)) public validate;
+    mapping (address => mapping (string => address)) public project;
+    mapping (address => mapping (string => bool)) public checkUnique;
 
     function name() public view returns (string memory) {
         return _name;
@@ -53,11 +56,12 @@ contract MegaFactoryV1 is CloneFactory, ReentrancyGuard, Ownable {
         listGame[game] = true;
     }
 
-    function deployedGame(address game, address token) public payable {
+    function deployedGame(address game, address token, string memory projectId) public payable {
         require(listGame[game] == true, "Game not found");
         require(msg.value >= deployedFee, "Invalid amount");
         require(address(MegaItemsNFT) != address(0), "Contract NFT not found");
         require(validate[_msgSender()][token] == false, "This contract token created by this user");
+        require(checkUnique[game][projectId] == false, "This project created");
         uint256 affFee = deployedFee.mul(affPercent).div(PERCENTS_DIVIDER);
         uint256 devFee = deployedFee.mul(devPercent).div(PERCENTS_DIVIDER);
         uint256 mktFee = deployedFee.sub(affFee).sub(devFee);
@@ -68,7 +72,9 @@ contract MegaFactoryV1 is CloneFactory, ReentrancyGuard, Ownable {
         IMegaJackpot(gameClone).setToken(token);
         IMegaJackpot(gameClone).setProjectOwnerWallet(_msgSender());
         validate[_msgSender()][token] = true;
-        emit DeployedGame(gameClone, _msgSender(), game, token, deployedFee, affFee, devFee, mktFee);
+        project[game][projectId] = gameClone;
+        checkUnique[game][projectId] = true;
+        emit DeployedGame(projectId, gameClone, _msgSender(), game, token, deployedFee, affFee, devFee, mktFee);
     }
 
     function order(address contractGame, uint256 idGame, uint256 qty, address sponsorAddress) public nonReentrant {
