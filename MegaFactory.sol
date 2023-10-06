@@ -17,10 +17,11 @@ contract MegaFactoryV1 is CloneFactory, ReentrancyGuard, Ownable {
     using SafeMath for uint256;
 
     event DeployedGame(
+        string projectId,
         address contractGameNew,
         address projectOwner,
         address contractGameOrigin,
-        address contractToken,
+        address contractToken, 
         uint256 deployedFee,
         uint256 affFee,
         uint256 devFee,
@@ -31,14 +32,18 @@ contract MegaFactoryV1 is CloneFactory, ReentrancyGuard, Ownable {
     string private _name = "Mega Factory V1";
     MegaItemsCore public MegaItemsNFT;
     uint256 constant public PERCENTS_DIVIDER = 1000;
+    address public projectWallet = 0x071a5B1451c55153Df15243d0Ff64c8078F75E46;
     address payable public devWallet = payable(0x8b9588F69e04D69655e0d866cD701844177360A7);
     address payable public mktWallet = payable(0x8b9588F69e04D69655e0d866cD701844177360A7);
     address payable public topAddress = payable(0x8b9588F69e04D69655e0d866cD701844177360A7);
-    uint256 public deployedFee = 0.002 ether;
+    uint256 public deployedFee = 0.002 ether; 
     uint256 public affPercent = 100;
     uint256 public devPercent = 200;
     uint256 public sytemFee = 10;
     mapping(address => bool) public listGame;
+    mapping (address => mapping (address => bool)) public validate;
+    mapping (address => mapping (string => address)) public project;
+    mapping (address => mapping (string => bool)) public checkUnique;
 
     function name() public view returns (string memory) {
         return _name;
@@ -51,11 +56,16 @@ contract MegaFactoryV1 is CloneFactory, ReentrancyGuard, Ownable {
         MegaItemsNFT = MegaItemsCore(contractNFT);
         listGame[game] = true;
     }
-
-    function deployedGame(address game, address token) public payable {
+    //0x0000000000000000000000000000000000000000
+    function deployedGame(address game, address token, string memory projectId) public payable {
         require(listGame[game] == true, "Game not found");
-        require(msg.value >= deployedFee, "The price to send is not correct");
-        require(address(MegaItemsNFT) != address(0), "contract NFT not found");
+        require(msg.value >= deployedFee, "Invalid amount");
+        require(address(MegaItemsNFT) != address(0), "Contract NFT not found");
+        require(validate[_msgSender()][token] == false, "This contract token created by this user");
+        require(checkUnique[game][projectId] == false, "This project created");
+        if(token == address(0)) {
+            require(_msgSender() == projectWallet, "Projects cannot be created with native tokens");
+        }
         uint256 affFee = deployedFee.mul(affPercent).div(PERCENTS_DIVIDER);
         uint256 devFee = deployedFee.mul(devPercent).div(PERCENTS_DIVIDER);
         uint256 mktFee = deployedFee.sub(affFee).sub(devFee);
@@ -65,11 +75,13 @@ contract MegaFactoryV1 is CloneFactory, ReentrancyGuard, Ownable {
         address gameClone = createClone(game);
         IMegaJackpot(gameClone).setToken(token);
         IMegaJackpot(gameClone).setProjectOwnerWallet(_msgSender());
-        emit DeployedGame(gameClone, _msgSender(), game, token, deployedFee, affFee, devFee, mktFee);
+        validate[_msgSender()][token] = true;
+        project[game][projectId] = gameClone;
+        checkUnique[game][projectId] = true;
+        emit DeployedGame(projectId, gameClone, _msgSender(), game, token, deployedFee, affFee, devFee, mktFee);
     }
 
     function order(address contractGame, uint256 idGame, uint256 qty, address sponsorAddress) public nonReentrant {
-        require(listGame[contractGame] == true, "Game not found");
         if (sponsorAddress == address(0)) {
             sponsorAddress = topAddress;
         }

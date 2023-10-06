@@ -4,8 +4,8 @@ pragma abicoder v2;
 
 interface IMegaJackpot {
     event Order(
+        uint256 idGame,
         uint256 totalReward,
-        uint256 qty,
         bool jackpot,
         uint256 devFee,
         uint256 mktFee,
@@ -22,7 +22,8 @@ interface IMegaJackpot {
         uint256[] values,
         uint256[] percents,
         uint256 idGame,
-        string nameContract
+        string nameContract,
+        address newGameContract
     );
     function order(
         uint256 devPercent,
