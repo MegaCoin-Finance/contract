@@ -36,7 +36,7 @@ contract MegaFactoryV1 is CloneFactory, ReentrancyGuard, Ownable {
     address payable public devWallet = payable(0x8b9588F69e04D69655e0d866cD701844177360A7);
     address payable public mktWallet = payable(0x8b9588F69e04D69655e0d866cD701844177360A7);
     address payable public topAddress = payable(0x8b9588F69e04D69655e0d866cD701844177360A7);
-    uint256 public deployedFee = 0.002 ether; 
+    uint256 public deployedFee = 0.002 ether;
     uint256 public affPercent = 100;
     uint256 public devPercent = 200;
     uint256 public sytemFee = 10;
@@ -110,7 +110,7 @@ contract MegaFactoryV1 is CloneFactory, ReentrancyGuard, Ownable {
     }
 
     function setDeployFee(uint256 fee) public onlyOwner {
-        deployedFee = fee;
+        deployedFee = fee * 1 ether;
     }
 
     function setAffPercent(uint256 fee) public onlyOwner {
