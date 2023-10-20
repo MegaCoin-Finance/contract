@@ -110,7 +110,7 @@ contract MegaFactoryV1 is CloneFactory, ReentrancyGuard, Ownable {
     }
 
     function setDeployFee(uint256 fee) public onlyOwner {
-        deployedFee = fee * 1 ether / PERCENTS_DIVIDER;
+        deployedFee = fee / 1 ether;
     }
 
     function setAffPercent(uint256 fee) public onlyOwner {
