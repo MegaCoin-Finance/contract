@@ -33,9 +33,9 @@ contract MegaFactoryV1 is CloneFactory, ReentrancyGuard, Ownable {
     MegaItemsCore public MegaItemsNFT;
     uint256 constant public PERCENTS_DIVIDER = 1000;
     address public projectWallet = 0x071a5B1451c55153Df15243d0Ff64c8078F75E46;
-    address payable public devWallet = payable(0x8b9588F69e04D69655e0d866cD701844177360A7);
-    address payable public mktWallet = payable(0x8b9588F69e04D69655e0d866cD701844177360A7);
-    address payable public topAddress = payable(0x8b9588F69e04D69655e0d866cD701844177360A7);
+    address payable public devWallet = payable(0x071a5B1451c55153Df15243d0Ff64c8078F75E46);
+    address payable public mktWallet = payable(0x071a5B1451c55153Df15243d0Ff64c8078F75E46);
+    address payable public topAddress = payable(0x071a5B1451c55153Df15243d0Ff64c8078F75E46);
     uint256 public deployedFee = 0.002 ether;
     uint256 public affPercent = 100;
     uint256 public devPercent = 200;
