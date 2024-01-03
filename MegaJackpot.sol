@@ -119,8 +119,7 @@ contract MegaJackpot is IMegaJackpot, ReentrancyGuard, Ownable {
         uint256 devPercent,
         uint256 sytemFee,
         address sponsorAddress,
-        address devWallet,
-        address mktWallet,
+        address systemFeeWallet,
         uint256 idGame,
         uint256 tokenId,
         uint256 qty,
@@ -135,9 +134,8 @@ contract MegaJackpot is IMegaJackpot, ReentrancyGuard, Ownable {
         uint256 newPrice = token.balanceOf(address(this));
         uint256 afterFee = newPrice - currentPrice;
         uint256 devFee = amount * sytemFee / PERCENTS_DIVIDER * devPercent / PERCENTS_DIVIDER;
-        token.transfer(devWallet, devFee);
         uint256 mktFee = amount * sytemFee / PERCENTS_DIVIDER - devFee;
-        token.transfer(mktWallet, mktFee);
+        token.transfer(systemFeeWallet, mktFee.add(devFee));
         uint256 affFee = amount * gameInfo[idGame].affiliatePercent / PERCENTS_DIVIDER;
         token.transfer(sponsorAddress, affFee);
         uint256 ownerFee = amount * gameInfo[idGame].ownerPercent / PERCENTS_DIVIDER;

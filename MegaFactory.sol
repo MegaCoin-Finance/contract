@@ -33,8 +33,8 @@ contract MegaFactoryV1 is CloneFactory, ReentrancyGuard, Ownable {
     MegaItemsCore public MegaItemsNFT;
     uint256 constant public PERCENTS_DIVIDER = 1000;
     address public projectWallet = 0x071a5B1451c55153Df15243d0Ff64c8078F75E46;
-    address payable public devWallet = payable(0x071a5B1451c55153Df15243d0Ff64c8078F75E46);
-    address payable public mktWallet = payable(0x071a5B1451c55153Df15243d0Ff64c8078F75E46);
+    address payable public systemFeeWallet = payable(0x071a5B1451c55153Df15243d0Ff64c8078F75E46);
+    address payable public deployFeeWallet = payable(0x071a5B1451c55153Df15243d0Ff64c8078F75E46);
     address payable public topAddress = payable(0x071a5B1451c55153Df15243d0Ff64c8078F75E46);
     uint256 public deployedFee = 0.002 ether;
     uint256 public affPercent = 100;
@@ -69,9 +69,7 @@ contract MegaFactoryV1 is CloneFactory, ReentrancyGuard, Ownable {
         uint256 affFee = deployedFee.mul(affPercent).div(PERCENTS_DIVIDER);
         uint256 devFee = deployedFee.mul(devPercent).div(PERCENTS_DIVIDER);
         uint256 mktFee = deployedFee.sub(affFee).sub(devFee);
-        topAddress.transfer(affFee);
-        devWallet.transfer(devFee);
-        mktWallet.transfer(mktFee);
+        deployFeeWallet.transfer(mktFee.add(affFee).add(devFee));
         address gameClone = createClone(game);
         IMegaJackpot(gameClone).setToken(token);
         IMegaJackpot(gameClone).setProjectOwnerWallet(_msgSender());
@@ -91,8 +89,7 @@ contract MegaFactoryV1 is CloneFactory, ReentrancyGuard, Ownable {
             devPercent,
             sytemFee,
             sponsorAddress,
-            devWallet,
-            mktWallet,
+            systemFeeWallet,
             idGame,
             tokenId,
             qty,
@@ -126,11 +123,11 @@ contract MegaFactoryV1 is CloneFactory, ReentrancyGuard, Ownable {
     }
 
     function setDevWallet(address _wallet) public onlyOwner {
-        devWallet = payable(_wallet);
+        systemFeeWallet = payable(_wallet);
     }
 
     function setMktWallet(address _wallet) public onlyOwner {
-        mktWallet = payable(_wallet);
+        deployFeeWallet = payable(_wallet);
     }
 
     function setTopAddress(address _wallet) public onlyOwner {
