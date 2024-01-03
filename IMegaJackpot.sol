@@ -30,7 +30,6 @@ interface IMegaJackpot {
         uint256 sytemFee,
         address sponsorAddress,
         address devWallet,
-        address mktWallet,
         uint256 idGame,
         uint256 tokenId,
         uint256 qty,
